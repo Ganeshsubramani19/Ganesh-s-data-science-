@@ -1,0 +1,31 @@
+import pandas as pd
+# Shape of the dataset
+print("Shape:", df.shape)
+# Column names
+print("Columns:", df.columns.tolist())
+# Data types and non-null values
+df.info()
+# Summary statistics for numeric features
+df.describe()
+# Import necessary libraries
+import pandas as pd
+
+# Load the dataset
+df = pd.read_csv('/content/creditcard[1].csv')  # Update path if needed
+
+# Display basic info
+print("Dataset Shape:", df.shape)
+print("\nFirst 5 Rows:")
+print(df.head())
+
+# Check for missing values
+print("\nMissing Values in Each Column:")
+print(df.isnull().sum())
+
+# Check for duplicate rows
+duplicate_count = df.duplicated().sum()
+print(f"\nNumber of duplicate rows: {duplicate_count}")
+
+# Optionally, drop duplicates
+# df = df.drop_duplicates()
+# print(f"Shape after removing duplicates: {df.shape}")
