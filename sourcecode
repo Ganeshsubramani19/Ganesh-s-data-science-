@@ -1,0 +1,151 @@
+#LIBRARY FUNCTION
+
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.preprocessing import StandardScaler
+from imblearn.over_sampling import SMOTE
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+UPLOAD THE DATASET
+
+from google.colab import files
+uploaded = files.upload()
+
+DATA EXPLORATION
+
+df = pd.read_csv('/content/credit_card_fraud_dataset_with_class.csv')
+
+# Shape of the dataset
+print("Shape:", df.shape)
+# Column names
+print("Columns:", df.columns.tolist())
+# Data types and non-null values
+df.info()
+# Summary statistics for numeric features  content/creditcard[1].csv
+df.describe()
+
+
+CHECK FOR MISSING VALUES AND DUPLICATES
+
+
+# Display basic info
+
+print("Dataset Shape:", df.shape)
+print("\nFirst 5 Rows:")
+print(df.head())
+
+# Check for missing values
+
+print("\nMissing Values in Each Column:")
+print(df.isnull().sum())
+
+# Check for duplicate rows
+
+duplicate_count = df.duplicated().sum()
+print(f"\nNumber of duplicate rows: {duplicate_count}")
+df = df.drop_duplicates()
+print(f"Shape after removing duplicates: {df.shape}")
+
+# Show basic info
+
+print("Dataset Shape:", df.shape)
+
+#  VISUALIZATION 1: Transaction Amount Distribution 
+
+plt.figure(figsize=(8, 4))
+sns.histplot(df['Amount'], bins=50, kde=True)
+plt.title('Transaction Amount Distribution')
+plt.xlabel('Amount')
+plt.ylabel('Frequency')
+plt.show()
+
+# VISUALIZATION  2: Transaction Time Distribution 
+
+plt.figure(figsize=(8, 4))
+sns.histplot(df['Time'], bins=50, kde=True, color='orange')
+plt.title('Transaction Time Distribution')
+plt.xlabel('Time (seconds since first transaction)')
+plt.ylabel('Frequency')
+plt.show()
+
+#  VISUALIZATION  3: Class Distribution (Fraud vs Non-Fraud) 
+
+plt.figure(figsize=(6, 4))
+sns.countplot(x='Class', data=df, palette='Set2')
+plt.title('Fraud vs Non-Fraud Transactions')
+plt.xlabel('Class (0 = Non-Fraud, 1 = Fraud)')
+plt.ylabel('Count')
+plt.show()
+
+#  VISUALIZATION  4: Correlation Heatmap for Sample Features 
+
+sample_features = ['V1', 'V2', 'V3', 'V4', 'Amount', 'Class']
+corr = df[sample_features].corr()
+plt.figure(figsize=(6, 5))
+sns.heatmap(corr, annot=True, cmap='coolwarm', fmt=".2f")
+plt.title('Correlation Heatmap (Sample Features)')
+plt.show()
+
+
+MODLE EVALUATION
+
+print("Summary of 'Amount':")
+print(df['Amount'].describe())
+plt.figure(figsize=(8, 4))
+if 'Class' in df.columns:
+    sns.boxplot(x='Class', y='Amount', data=df)
+    plt.title('Transaction Amount by Class')
+    plt.xlabel('Class (0 = Genuine, 1 = Fraud)')
+    plt.ylabel('Amount')
+    plt.show()
+else:
+    print("Column 'Class' not found in DataFrame.")
+scaler = StandardScaler()
+df['Amount'] = scaler.fit_transform(df[['Amount']])
+print("\nScaled 'Amount' values:")
+print(df['Amount'].head())
+
+
+FEATURE SCALING
+
+# Scale 'Amount' feature
+scaler = StandardScaler()
+df['Amount'] = scaler.fit_transform(df[['Amount']])
+joblib.dump(scaler, 'scaler.pkl')
+
+# Display first few scaled values
+print("\nScaled 'Amount' values:")
+print(df['Amount'].head())
+
+
+DEPLOYMENT-BUILDING AN INTERACTION APP
+
+# Load trained model and scaler
+model = joblib.load("rf_model.pkl")
+scaler = joblib.load("scaler.pkl")
+st.title(" AI-Powered Credit Card Fraud Detection")
+st.markdown("Enter transaction details below:")
+
+time = st.number_input("Transaction Time (in seconds)", min_value=0.0)
+amount = st.number_input("Transaction Amount", min_value=0.0)
+
+v1 = st.number_input("V1")
+v2 = st.number_input("V2")
+
+# Create feature vector
+input_data = pd.DataFrame([[time, v1, v2, amount]], columns=["Time", "V1", "V2", "Amount"])
+
+# Scale input
+input_data[["Time", "Amount"]] = scaler.transform(input_data[["Time", "Amount"]])
+
+# Make prediction
+if st.button("Check for Fraud"):
+    prediction = model.predict(input_data)[0]
+    if prediction == 1:
+        st.error(" Fraudulent Transaction Detected!")
+    else:
+        st.success("Transaction appears genuine.")
